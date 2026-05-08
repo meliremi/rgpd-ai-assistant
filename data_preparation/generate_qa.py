@@ -1,0 +1,88 @@
+import json
+
+# Dataset complet basé sur le fichier RGPD.pdf (50 paires Q/R)
+MANUAL_QA_DATA = [
+    {"question": "Quel est l'objet principal du règlement (Art. 1) ?", "answer": "Protéger les libertés et droits fondamentaux des personnes physiques, en particulier leur droit à la protection des données à caractère personnel."},
+    {"question": "Qu'est-ce qu'une donnée à caractère personnel selon l'Art. 4 ?", "answer": "Toute information se rapportant à une personne physique identifiée ou identifiable directement ou indirectement."},
+    {"question": "Quelle est la définition du 'traitement' ?", "answer": "Toute opération ou ensemble d'opérations effectuées sur des données (collecte, enregistrement, conservation, modification, extraction, diffusion, etc.)."},
+    {"question": "Qui est le 'responsable du traitement' ?", "answer": "La personne, l'autorité ou l'organisme qui détermine seul ou conjointement les finalités et les moyens du traitement."},
+    {"question": "Qu'est-ce que la 'pseudonymisation' ?", "answer": "Le traitement de données de manière à ce qu'on ne puisse plus les attribuer à une personne sans informations supplémentaires séparées."},
+    {"question": "Qu'est-ce qu'un 'système de fichier' ?", "answer": "Tout ensemble structuré de données à caractère personnel accessibles selon des critères déterminés."},
+    {"question": "Le RGPD s'applique-t-il au traitement non automatisé ?", "answer": "Oui, s'ils font partie ou sont destinés à faire partie d'un système de fichiers."},
+    {"question": "Quels sont les principes relatifs au traitement (Art. 5) ?", "answer": "Licéité, loyauté, transparence, limitation des finalités, minimisation, exactitude, limitation de la conservation, intégrité et confidentialité."},
+    {"question": "Qu'est-ce que le principe de 'minimisation des données' ?", "answer": "Les données doivent être adéquates, pertinentes et limitées à ce qui est nécessaire au regard des finalités."},
+    {"question": "Qu'est-ce que le principe d' 'accountability' (responsabilité) ?", "answer": "Le responsable du traitement est responsable du respect des principes du RGPD et doit être en mesure de démontrer ce respect."},
+    {"question": "Quelles sont les bases légales de la licéité (Art. 6) ?", "answer": "Consentement, contrat, obligation légale, intérêts vitaux, mission d'intérêt public ou intérêt légitime."},
+    {"question": "Quelles sont les conditions du consentement (Art. 7) ?", "answer": "Le responsable doit pouvoir prouver que la personne a consenti, et celle-ci peut le retirer à tout moment."},
+    {"question": "Quel est l'âge par défaut du consentement pour un enfant (Art. 8) ?", "answer": "16 ans (les États membres peuvent l'abaisser jusqu'à 13 ans)."},
+    {"question": "Le traitement des données sensibles est-il autorisé (Art. 9) ?", "answer": "En principe non, sauf exceptions (consentement explicite, droit du travail, protection sociale, santé publique, etc.)."},
+    {"question": "Qu'est-ce qu'une donnée biométrique ?", "answer": "Donnée relative aux caractéristiques physiques, physiologiques ou comportementales permettant l'identification unique (ex: empreintes, iris)."},
+    {"question": "Quelles informations fournir lors de la collecte (Art. 13) ?", "answer": "Identité du responsable, finalités, base juridique, destinataires, durée de conservation et droits de la personne."},
+    {"question": "Qu'est-ce que le 'droit d'accès' (Art. 15) ?", "answer": "Le droit d'obtenir la confirmation que les données sont traitées et d'en recevoir une copie ainsi que diverses informations."},
+    {"question": "Qu'est-ce que le 'droit de rectification' (Art. 16) ?", "answer": "Le droit d'obtenir la correction des données inexactes ou de compléter des données incomplètes."},
+    {"question": "Qu'est-ce que le 'droit à l'effacement' (Art. 17) ?", "answer": "Le droit d'obtenir l'effacement de données, aussi appelé 'droit à l'oubli'."},
+    {"question": "Quand s'applique le droit à la limitation du traitement (Art. 18) ?", "answer": "Si l'exactitude est contestée, si le traitement est illicite, ou si la personne s'oppose à l'effacement."},
+    {"question": "Qu'est-ce que la portabilité des données (Art. 20) ?", "answer": "Le droit de recevoir les données dans un format structuré et de les transmettre à un autre responsable."},
+    {"question": "Peut-on s'opposer à la prospection ? (Art. 21)", "answer": "Oui, la personne a le droit de s'opposer à tout moment au traitement de ses données à des fins de prospection."},
+    {"question": "Qu'est-ce que la protection dès la conception (Art. 25) ?", "answer": "L'intégration de mesures de protection des données dès la phase de conception des systèmes et services."},
+    {"question": "Qu'est-ce qu'un 'sous-traitant' (Art. 28) ?", "answer": "L'entité qui traite des données à caractère personnel pour le compte du responsable du traitement."},
+    {"question": "Un contrat est-il obligatoire avec un sous-traitant ?", "answer": "Oui, le traitement par un sous-traitant doit être régi par un contrat ou un autre acte juridique."},
+    {"question": "Qui doit tenir un registre des activités de traitement (Art. 30) ?", "answer": "Chaque responsable et sous-traitant (sauf exceptions pour les entreprises de moins de 250 employés sous conditions)."},
+    {"question": "Quelle est l'obligation de sécurité (Art. 32) ?", "answer": "Mettre en œuvre des mesures techniques et organisationnelles pour assurer un niveau de sécurité adapté au risque."},
+    {"question": "Sous quel délai notifier une violation à l'autorité (Art. 33) ?", "answer": "Dans les meilleurs délais et, si possible, 72 heures au plus tard après en avoir pris connaissance."},
+    {"question": "Quand doit-on informer la personne d'une violation (Art. 34) ?", "answer": "Lorsqu'elle est susceptible d'engendrer un risque élevé pour les droits et libertés de la personne."},
+    {"question": "Qu'est-ce qu'une AIPD (Art. 35) ?", "answer": "Une analyse d'impact relative à la protection des données, obligatoire pour les traitements à haut risque."},
+    {"question": "Quand le DPO (DPD) est-il obligatoire (Art. 37) ?", "answer": "Secteur public, suivi régulier à grande échelle, ou traitement à grande échelle de données sensibles/pénales."},
+    {"question": "Quelles sont les missions du DPO ?", "answer": "Informer, conseiller, contrôler le respect du règlement et être le point de contact avec l'autorité de contrôle."},
+    {"question": "Qu'est-ce qu'un 'code de conduite' (Art. 40) ?", "answer": "Un mécanisme permettant de préciser l'application du règlement selon les spécificités des secteurs."},
+    {"question": "Quelle est la base des transferts hors UE (Art. 45) ?", "answer": "Une décision d'adéquation de la Commission européenne, ou des garanties appropriées (CCT, BCR)."},
+    {"question": "Qu'est-ce que le 'mécanisme de cohérence' (Art. 63) ?", "answer": "Une procédure visant à assurer l'application uniforme du règlement dans toute l'Union."},
+    {"question": "Quel est le rôle du Comité européen de la protection des données (Art. 68) ?", "answer": "Veiller à l'application cohérente du règlement et conseiller la Commission."},
+    {"question": "Le droit d'introduire une réclamation (Art. 77) ?", "answer": "Toute personne a le droit d'introduire une réclamation auprès d'une autorité de contrôle."},
+    {"question": "Quel est le montant des amendes pour violations majeures (Art. 83) ?", "answer": "Jusqu'à 20 millions d'euros ou 4 % du chiffre d'affaires annuel mondial total."},
+    {"question": "Existe-t-il des dérogations pour la liberté d'expression (Art. 85) ?", "answer": "Oui, les États membres concilient par la loi le droit à la protection des données et la liberté d'expression."},
+    {"question": "Comment sont traitées les données de santé (Art. 81 du projet/PDF) ?", "answer": "Leur traitement est autorisé pour des motifs d'intérêt public dans le domaine de la santé publique ou de la médecine du travail."},
+    {"question": "Qu'est-ce que le 'guichet unique' ?", "answer": "La compétence d'une autorité de contrôle principale pour les traitements transfrontaliers d'un responsable établi dans l'UE."},
+    {"question": "Le règlement s'applique-t-il aux données de navigation (IP) ?", "answer": "Oui, les identifiants en ligne sont considérés comme des données à caractère personnel car ils permettent l'identification."},
+    {"question": "Qu'est-ce qu'une donnée génétique ?", "answer": "Donnée relative aux caractéristiques génétiques héréditaires ou acquises fournissant des informations sur la physiologie ou la santé."},
+    {"question": "Quelle est la durée de conservation ?", "answer": "Les données ne doivent être conservées que le temps nécessaire aux finalités du traitement (principe de limitation de conservation)."},
+    {"question": "Peut-on traiter des données pour une autre finalité ?", "answer": "Uniquement si la nouvelle finalité est compatible avec la finalité initiale ou si la personne y consent."},
+    {"question": "Qu'est-ce qu'une décision individuelle automatisée (Art. 22) ?", "answer": "Le droit de ne pas faire l'objet d'une décision produisant des effets juridiques fondée exclusivement sur un traitement automatisé."},
+    {"question": "Qui assure le contrôle en France ?", "answer": "La CNIL (Commission Nationale de l'Informatique et des Libertés)."},
+    {"question": "Le RGPD remplace-t-il la directive 95/46/CE ?", "answer": "Oui, il abroge la directive précédente pour harmoniser les règles dans l'UE."},
+    {"question": "Date d'application du RGPD ?", "answer": "Le 25 mai 2018."},
+    {"question": "Qu'est-ce que l' 'intérêt légitime' ?", "answer": "Une base légale utilisable si les intérêts du responsable ne sont pas surpassés par les droits et libertés de la personne."}
+]
+
+SYSTEM_PROMPT = """Tu es un expert en création de datasets pour LLM. 
+A partir d'un passage RGPD, génère exactement 3 paires Q/R. 
+Questions variées factuelles, analytiques, compréhension.
+Réponses précises, complètes, basées uniquement sur le texte.
+Retourne UNIQUEMENT un JSON valide."""
+
+def generate_qa_pairs(client=None, chunk_text=None, use_manual=True):
+    """
+    Si use_manual est True, retourne les 50 questions intégrées extraites du PDF.
+    Sinon, appelle l'API pour générer à partir du texte.
+    """
+    if use_manual:
+        return MANUAL_QA_DATA
+    
+    # Appel API (nécessite un client OpenAI compatible)
+    prompt = f"{SYSTEM_PROMPT}\n\nTexte source: {chunk_text}"
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return json.loads(response.choices[0].message.content)
+
+# Execution
+if __name__ == "__main__":
+    dataset = generate_qa_pairs(use_manual=True)
+    
+    # Sauvegarde dans le fichier JSON
+    filename = "dataset_rgpd_50.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=4, ensure_ascii=False)
+        
+    print(f"Succès ! Le fichier '{filename}' a été créé avec 50 questions extraites du PDF.")
