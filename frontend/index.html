@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LawBot — Assistant RGPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400&family=Cormorant:ital,wght@0,300;1,300;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07070a;
+  --s1:#0d0d12;
+  --s2:#13131a;
+  --s3:#1a1a24;
+  --s4:#21212e;
+
+  --v:#7c3aed;
+  --v2:#6d28d9;
+  --vh:#a78bfa;
+  --vl:rgba(124,58,237,.13);
+  --vb:rgba(124,58,237,.25);
+  --vg:rgba(124,58,237,.18);
+
+  --w:#f0f0ff;
+  --w2:#c4c4d8;
+  --muted:#5a5a72;
+  --ghost:#2a2a38;
+
+  --line:rgba(255,255,255,.065);
+  --line2:rgba(255,255,255,.04);
+
+  --ok:#34d399;--warn:#fbbf24;--err:#f87171;
+
+  --sb:268px;
+  --r:12px;--r2:8px;--r3:6px;
+
+  --ff:'Space Grotesk',sans-serif;
+  --ffs:'Instrument Serif',serif;
+  --ffm:'JetBrains Mono',monospace;
+  --ffc:'Cormorant',serif;
+
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--w);font-family:var(--ff);font-size:14px;line-height:1.6;display:flex;font-weight:400}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--ghost);border-radius:99px}
+
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.mesh-blob{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none}
+.mb1{width:50vw;height:50vw;top:-15vh;left:-5vw;background:radial-gradient(ellipse,rgba(109,40,217,.18) 0%,transparent 65%);animation:mb1 20s ease-in-out infinite alternate}
+.mb2{width:38vw;height:38vw;bottom:-10vh;right:0;background:radial-gradient(ellipse,rgba(124,58,237,.1) 0%,transparent 60%);animation:mb2 26s ease-in-out infinite alternate}
+.mb3{width:28vw;height:32vw;top:40%;left:40%;background:radial-gradient(ellipse,rgba(79,70,229,.07) 0%,transparent 65%);animation:mb3 18s ease-in-out infinite alternate}
+@keyframes mb1{to{transform:translate(4%,8%) scale(1.08)}}
+@keyframes mb2{to{transform:translate(-5%,-6%) scale(.92)}}
+@keyframes mb3{to{transform:translate(6%,-10%)}}
+
+.app{position:relative;z-index:1;display:flex;height:100vh;width:100%;overflow:hidden}
+
+/* ════ SIDEBAR ════ */
+.sb{
+  width:var(--sb);flex-shrink:0;
+  background:var(--s1);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  height:100vh;
+  transition:width .32s var(--ease),opacity .28s,border-color .28s;
+  overflow:hidden;position:relative;
+}
+.sb.closed{width:0;opacity:0;border-color:transparent}
+
+.brand{padding:22px 18px 18px;border-bottom:1px solid var(--line);flex-shrink:0}
+.brand-row{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.brand-icon{
+  width:36px;height:36px;border-radius:9px;
+  background:var(--vl);border:1px solid var(--vb);
+  display:grid;place-items:center;flex-shrink:0;
+  box-shadow:0 0 18px var(--vg);
+}
+.brand-icon svg{width:16px;height:16px;fill:var(--vh)}
+.brand-name{font-size:1.05rem;font-weight:700;color:var(--w);letter-spacing:-.01em;white-space:nowrap}
+.brand-tag{font-size:.58rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;white-space:nowrap}
+
+.new-btn{
+  width:100%;display:flex;align-items:center;gap:9px;
+  background:var(--vl);border:1px solid var(--vb);border-radius:var(--r3);
+  padding:9px 13px;color:var(--vh);font-family:var(--ff);
+  font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s;
+  white-space:nowrap;letter-spacing:.01em;
+}
+.new-btn:hover{background:rgba(124,58,237,.22);box-shadow:0 0 16px var(--vg);transform:translateY(-1px)}
+.new-btn svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
+
+.sb-hist{flex:1;overflow-y:auto;padding:6px 10px}
+.hist-lbl{font-size:.57rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:10px 6px 5px;display:block;white-space:nowrap}
+.hist-empty{font-size:.77rem;color:var(--muted);padding:16px 6px;line-height:1.75;text-align:center}
+
+.conv{display:flex;align-items:center;border-radius:var(--r3);cursor:pointer;transition:background .14s;margin-bottom:1px}
+.conv:hover{background:rgba(255,255,255,.04)}
+.conv.active{background:var(--vl)}
+.conv.active .conv-name{color:var(--vh)}
+.conv.active .conv-ts{color:rgba(167,139,250,.6)}
+.conv-info{flex:1;padding:8px 9px;min-width:0}
+.conv-name{font-size:.77rem;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-weight:500}
+.conv-ts{font-size:.59rem;color:var(--muted);margin-top:1px;display:block}
+.conv-del{flex-shrink:0;width:26px;height:26px;border-radius:5px;background:none;border:none;cursor:pointer;display:grid;place-items:center;opacity:0;transition:opacity .14s,background .14s;margin-right:3px}
+.conv:hover .conv-del{opacity:1}
+.conv-del:hover{background:rgba(248,113,113,.14)}
+.conv-del svg{width:12px;height:12px;fill:#f87171}
+
+.sb-foot{padding:14px 18px;border-top:1px solid var(--line);flex-shrink:0}
+.cr{font-size:.58rem;color:var(--muted);line-height:1.85;white-space:nowrap}
+.cr strong{color:var(--w2);font-weight:500}
+
+/* ════ MAIN ════ */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0;position:relative}
+
+.topbar{
+  display:flex;align-items:center;gap:14px;
+  height:54px;padding:0 32px;flex-shrink:0;
+  border-bottom:1px solid var(--line);
+  background:rgba(7,7,10,.75);backdrop-filter:blur(20px);
+  animation:slideD .5s var(--ease) both;
+}
+@keyframes slideD{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.sb-toggle{
+  width:32px;height:32px;border-radius:var(--r3);
+  background:transparent;border:1px solid var(--line);
+  display:grid;place-items:center;cursor:pointer;
+  transition:all .2s;flex-shrink:0;color:var(--muted);
+}
+.sb-toggle:hover{background:var(--s3);border-color:rgba(255,255,255,.12);color:var(--w)}
+.sb-toggle svg{width:15px;height:15px;fill:currentColor}
+
+.tb-title{flex:1;font-size:.85rem;font-weight:500;color:var(--w2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-title em{font-family:var(--ffs);font-style:italic;color:var(--vh);font-size:.95rem}
+
+.tb-pills{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 11px;font-size:.62rem;font-weight:600;letter-spacing:.06em;border:1px solid}
+.pill-model{background:var(--vl);border-color:var(--vb);color:var(--vh)}
+.pill-model svg{width:10px;height:10px;fill:currentColor}
+.s-pill{transition:all .4s}
+.s-pill.checking{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.2);color:var(--warn)}
+.s-pill.online{background:rgba(52,211,153,.05);border-color:rgba(52,211,153,.18);color:var(--ok)}
+.s-pill.offline{background:rgba(248,113,113,.06);border-color:rgba(248,113,113,.2);color:var(--err)}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.s-pill.checking .sdot{background:var(--warn);animation:bl 1.2s infinite}
+.s-pill.online   .sdot{background:var(--ok);animation:bl 2.5s infinite}
+.s-pill.offline  .sdot{background:var(--err)}
+@keyframes bl{50%{opacity:.25;transform:scale(.65)}}
+
+/* ════ CHAT ════ */
+.chat{flex:1;overflow-y:auto;padding:48px 64px;display:flex;flex-direction:column;gap:28px;scroll-behavior:smooth}
+
+/* ════ WELCOME — VERSION AMÉLIORÉE ════ */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:20px 0 8px;max-width:720px;margin:0 auto;
+  animation:rise .7s var(--ease) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Badge animé */
+.w-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--vb);border-radius:99px;
+  padding:5px 16px;margin-bottom:28px;
+  background:var(--vl);
+  font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--vh);font-weight:600;
+}
+.w-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--vh);animation:bl 2s infinite;flex-shrink:0}
+
+/* Titre serif luxe */
+.w-h{
+  font-family:var(--ffc);
+  font-size:clamp(3rem,5.5vw,5rem);
+  line-height:1.04;font-weight:300;font-style:italic;
+  margin-bottom:16px;letter-spacing:-.01em;
+  background:linear-gradient(140deg,var(--w) 25%,var(--vh) 65%,#c4b5fd 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.w-h strong{font-style:normal;font-weight:300;-webkit-text-fill-color:var(--w);color:var(--w)}
+
+/* Sous-titre */
+.w-p{
+  font-family:var(--ffs);font-style:italic;
+  font-size:1.05rem;color:var(--w2);max-width:420px;line-height:1.9;
+  margin-bottom:0;font-weight:400;
+}
+
+/* Ornement */
+.w-orn{display:flex;align-items:center;gap:14px;margin:22px auto 28px;width:200px}
+.w-orn-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--vb))}
+.w-orn-line.r{background:linear-gradient(90deg,var(--vb),transparent)}
+.w-orn-gem{
+  width:7px;height:7px;border-radius:1px;
+  background:var(--v);transform:rotate(45deg);
+  box-shadow:0 0 10px var(--vg),0 0 20px rgba(124,58,237,.15);
+  flex-shrink:0;
+}
+
+/* Grille suggestions */
+.sug-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;max-width:660px}
+.sug{
+  background:var(--s2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:9px 12px 8px;font-family:var(--ff);
+  color:var(--w2);cursor:pointer;transition:all .22s;text-align:left;
+  line-height:1.4;font-weight:400;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.sug::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--vb),transparent);
+  opacity:0;transition:opacity .22s;
+}
+.sug-ico{display:none}
+.sug-lbl{display:block;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;font-weight:600}
+.sug-txt{display:block;font-size:.72rem;line-height:1.35;color:var(--w2)}
+.sug-left{flex:1;min-width:0}
+.sug-arr{flex-shrink:0;font-size:.65rem;color:var(--muted);transition:all .22s;font-family:var(--ffm)}
+.sug:hover{background:var(--s3);border-color:var(--vb);color:var(--w);box-shadow:0 4px 16px rgba(124,58,237,.12)}
+.sug:hover::before{opacity:1}
+.sug:hover .sug-arr{color:var(--vh);transform:translateX(3px)}
+.sug:hover .sug-txt{color:var(--w)}
+
+/* ════ MESSAGES ════ */
+.msg{display:flex;gap:14px;animation:rise .3s var(--ease) both;max-width:900px}
+.msg.user{flex-direction:row-reverse;margin-left:auto}
+
+.av{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  display:grid;place-items:center;font-size:.55rem;font-weight:700;letter-spacing:.07em;
+  align-self:flex-start;margin-top:22px;
+}
+.msg.user .av{background:var(--vl);border:1px solid var(--vb);color:var(--vh)}
+.msg.bot  .av{background:var(--s2);border:1px solid var(--line);color:var(--muted)}
+
+.msg-body{max-width:72%;min-width:0}
+.msg.user .msg-body{max-width:64%}
+.msg-meta{font-size:.59rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;padding:0 2px}
+.msg.user .msg-meta{text-align:right}
+
+.bbl{padding:14px 20px;font-size:.875rem;line-height:1.85;word-break:break-word;border-radius:var(--r)}
+.msg.user .bbl{background:var(--s3);border:1px solid var(--line);border-radius:var(--r) 3px var(--r) var(--r);color:var(--w)}
+.msg.bot  .bbl{background:var(--s2);border:1px solid var(--line);border-radius:3px var(--r) var(--r) var(--r);border-left:2px solid var(--v);color:var(--w)}
+
+.src-btn{
+  margin-top:10px;display:inline-flex;align-items:center;gap:7px;
+  background:transparent;border:1px solid var(--line);border-radius:99px;
+  padding:5px 13px;color:var(--muted);font-family:var(--ff);font-size:.67rem;
+  cursor:pointer;transition:all .18s;font-weight:500;letter-spacing:.04em;
+}
+.src-btn:hover{border-color:var(--vb);color:var(--vh)}
+.src-btn svg{width:10px;height:10px;fill:currentColor;transition:transform .22s}
+.src-btn.open svg:last-child{transform:rotate(180deg)}
+.src-panel{display:none;margin-top:8px;border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;background:var(--s1)}
+.src-panel.open{display:block;animation:rise .22s ease both}
+.src-row{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-bottom:1px solid var(--line2);font-family:var(--ffm);font-size:.71rem;color:var(--w2);line-height:1.65}
+.src-row:last-child{border-bottom:none}
+.src-n{flex-shrink:0;width:20px;height:20px;background:var(--vl);border-radius:4px;display:grid;place-items:center;color:var(--vh);font-size:.58rem;font-family:var(--ff);font-weight:700}
+
+.typing-wrap{display:flex;gap:5px;align-items:center;padding:14px 20px}
+.d{width:6px;height:6px;border-radius:50%;background:var(--v)}
+.d:nth-child(1){animation:db 1.2s 0s    ease-in-out infinite}
+.d:nth-child(2){animation:db 1.2s .16s ease-in-out infinite}
+.d:nth-child(3){animation:db 1.2s .32s ease-in-out infinite}
+@keyframes db{0%,60%,100%{transform:translateY(0);opacity:.2}30%{transform:translateY(-7px);opacity:1}}
+
+.err-msg{padding:13px 18px;font-size:.84rem;line-height:1.78;background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.15);border-radius:var(--r);color:#fca5a5}
+.err-msg code{font-family:var(--ffm);font-size:.7rem;opacity:.65}
+
+/* ════ INPUT ════ */
+.iz{padding:12px 64px 26px;flex-shrink:0;background:linear-gradient(to top,rgba(7,7,10,1) 55%,transparent)}
+
+.iz-wrap{
+  background:var(--s2);border:1px solid var(--line);
+  border-radius:16px;overflow:hidden;
+  transition:border-color .25s,box-shadow .25s;
+}
+.iz-wrap:focus-within{border-color:var(--vb);box-shadow:0 0 0 3px rgba(124,58,237,.1),0 8px 32px rgba(124,58,237,.1)}
+
+.iz-row{display:flex;align-items:flex-end;gap:10px;padding:13px 13px 13px 20px}
+
+#question{
+  flex:1;background:none;border:none;outline:none;
+  color:var(--w);font-family:var(--ff);font-size:.88rem;font-weight:300;
+  resize:none;line-height:1.65;min-height:26px;max-height:140px;overflow-y:auto;
+}
+#question::placeholder{color:var(--muted)}
+
+.send{
+  flex-shrink:0;width:42px;height:42px;border-radius:11px;
+  background:linear-gradient(145deg,var(--v),var(--v2));
+  border:none;cursor:pointer;display:grid;place-items:center;
+  transition:all .2s;box-shadow:0 2px 16px rgba(124,58,237,.4);
+}
+.send:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 6px 24px rgba(124,58,237,.55)}
+.send:active{transform:scale(.97)}
+.send:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;transform:none}
+.send svg{width:16px;height:16px;fill:#fff}
+
+.iz-foot{display:flex;justify-content:space-between;align-items:center;padding:0 20px 10px}
+.iz-hint{font-size:.61rem;color:var(--muted);letter-spacing:.03em}
+.iz-hint kbd{background:var(--s3);border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-family:var(--ffm);font-size:.58rem;color:var(--w2)}
+.iz-count{font-size:.6rem;color:var(--muted);font-family:var(--ffm)}
+</style>
+</head>
+<body>
+
+<div class="mesh">
+  <div class="mesh-blob mb1"></div>
+  <div class="mesh-blob mb2"></div>
+  <div class="mesh-blob mb3"></div>
+</div>
+
+<div class="app" id="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sb" id="sb">
+  <div class="brand">
+    <div class="brand-row">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5L12 1z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">LawBot</div>
+        <div class="brand-tag">Conformité RGPD</div>
+      </div>
+    </div>
+    <button class="new-btn" onclick="newConv()">
+      <svg viewBox="0 0 24 24"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Nouvelle conversation
+    </button>
+  </div>
+
+  <div class="sb-hist" id="histArea">
+    <span class="hist-lbl">Récent</span>
+    <div class="hist-empty" id="histEmpty">Aucune conversation.</div>
+  </div>
+
+  <div class="sb-foot">
+    <div class="cr">
+      © 2026 LawBot · Assistant RGPD<br>
+      <strong>Melissa Remila & Selma Benzouaoua</strong>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main" id="main">
+
+  <div class="topbar">
+    <button class="sb-toggle" id="sbToggle" onclick="toggleSb()" title="Masquer / afficher les conversations">
+      <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+    </button>
+
+    <div class="tb-title" id="tbTitle">Bienvenue — <em>posez votre question</em></div>
+
+    <div class="tb-pills">
+      <div class="pill pill-model">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        TinyLlama · RAG RGPD
+      </div>
+      <div class="pill s-pill checking" id="sPill">
+        <span class="sdot"></span>
+        <span id="sTxt">Vérification…</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="welcome" id="welcomeCard">
+
+      <!-- Badge -->
+      <div class="w-badge">
+        <span class="w-badge-dot"></span>
+        Assistant juridique IA · 2026
+      </div>
+
+      <!-- Titre -->
+      <h1 class="w-h"><strong>Bonjour,</strong><br>je suis <em>LawBot</em></h1>
+
+      <!-- Sous-titre -->
+      <p class="w-p">Expert en protection des données et conformité RGPD. Posez vos questions sur le droit applicable, les obligations des entreprises ou les droits des personnes.</p>
+
+      <!-- Ornement -->
+      <div class="w-orn">
+        <div class="w-orn-line"></div>
+        <div class="w-orn-gem"></div>
+        <div class="w-orn-line r"></div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="sug-grid">
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Fondements</span><span class="sug-txt">Qu'est-ce que le RGPD ?</span></div><span class="sug-arr">→</span></button>
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Droits</span><span class="sug-txt">Droits des personnes concernées</span></div><span class="sug-arr">→</span></button>
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Obligations</span><span class="sug-txt">Obligations du responsable</span></div><span class="sug-arr">→</span></button>
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Incidents</span><span class="sug-txt">Violation de données personnelles</span></div><span class="sug-arr">→</span></button>
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">DPO</span><span class="sug-txt">Rôle et missions du DPO</span></div><span class="sug-arr">→</span></button>
+        <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Sanctions</span><span class="sug-txt">Sanctions CNIL 2024</span></div><span class="sug-arr">→</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="iz">
+    <div class="iz-wrap">
+      <div class="iz-row">
+        <textarea id="question" rows="1"
+          placeholder="Posez votre question sur le RGPD, les données personnelles ou la conformité…"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this);updCount(this)"></textarea>
+        <button class="send" id="sendBtn" onclick="send()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="iz-foot">
+        <span class="iz-hint"><kbd>Entrée</kbd> envoyer &nbsp;·&nbsp; <kbd>Shift+Entrée</kbd> saut de ligne</span>
+        <span class="iz-count" id="izCount">0 / 500</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const API_ASK='/ask',API_HEALTH='/health',SKEY='lawbot_2026';
+let loading=false,convId=null,sbOpen=true;
+
+const getAll=()=>{try{return JSON.parse(localStorage.getItem(SKEY))||[]}catch{return[]}};
+const setAll=h=>localStorage.setItem(SKEY,JSON.stringify(h));
+const getConv=id=>getAll().find(c=>c.id===id)||null;
+const upsert=c=>{const h=getAll();const i=h.findIndex(x=>x.id===c.id);i>=0?h[i]=c:h.unshift(c);setAll(h)};
+const delConv=id=>setAll(getAll().filter(c=>c.id!==id));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt=t=>esc(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
+
+function ago(ts){
+  const d=Date.now()-ts;
+  if(d<60e3)return"À l'instant";
+  if(d<3600e3)return`Il y a ${Math.floor(d/60e3)} min`;
+  if(d<86400e3)return'Auj. '+new Date(ts).toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'});
+  return new Date(ts).toLocaleDateString('fr',{day:'numeric',month:'short'});
+}
+
+function toggleSb(){
+  const sb=document.getElementById('sb');
+  sbOpen=!sbOpen;sb.classList.toggle('closed',!sbOpen);
+}
+
+async function checkHealth(){
+  const p=document.getElementById('sPill'),t=document.getElementById('sTxt');
+  try{
+    const r=await fetch(API_HEALTH,{cache:'no-store'});
+    const d=await r.json();
+    if(r.ok&&d.status==='ok'){p.className='pill s-pill online';t.textContent='API opérationnelle';}
+    else throw 0;
+  }catch{p.className='pill s-pill offline';t.textContent='API hors ligne';}
+}
+
+function renderHist(){
+  const area=document.getElementById('histArea');
+  const empty=document.getElementById('histEmpty');
+  const all=getAll();
+  area.querySelectorAll('.conv').forEach(e=>e.remove());
+  empty.style.display=all.length?'none':'block';
+  all.forEach(c=>{
+    const row=document.createElement('div');
+    row.className='conv'+(c.id===convId?' active':'');
+    row.innerHTML=`
+      <div class="conv-info">
+        <span class="conv-name">${esc(c.title)}</span>
+        <span class="conv-ts">${ago(c.ts)}</span>
+      </div>
+      <button class="conv-del"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>`;
+    row.querySelector('.conv-info').addEventListener('click',()=>loadConv(c.id));
+    row.querySelector('.conv-del').addEventListener('click',e=>{e.stopPropagation();rmConv(c.id)});
+    area.appendChild(row);
+  });
+}
+
+function loadConv(id){
+  const c=getConv(id);if(!c)return;
+  convId=id;
+  document.getElementById('chat').innerHTML='';
+  document.getElementById('tbTitle').textContent=c.title;
+  c.messages.forEach(m=>appendMsg(m.role,m.text,m.sources||[]));
+  renderHist();
+}
+
+function newConv(){
+  convId=null;
+  document.getElementById('chat').innerHTML='';
+  document.getElementById('tbTitle').innerHTML='Bienvenue — <em>posez votre question</em>';
+  buildWelcome();renderHist();
+  document.getElementById('question').focus();
+}
+
+function buildWelcome(){
+  const chat=document.getElementById('chat');
+  const w=document.createElement('div');w.className='welcome';w.id='welcomeCard';
+  w.innerHTML=`
+    <div class="w-badge"><span class="w-badge-dot"></span>Assistant juridique IA · 2026</div>
+    <h1 class="w-h"><strong>Bonjour,</strong><br>je suis <em>LawBot</em></h1>
+    <p class="w-p">Expert en protection des données et conformité RGPD. Posez vos questions sur le droit applicable, les obligations des entreprises ou les droits des personnes.</p>
+    <div class="w-orn"><div class="w-orn-line"></div><div class="w-orn-gem"></div><div class="w-orn-line r"></div></div>
+    <div class="sug-grid">
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Fondements</span><span class="sug-txt">Qu'est-ce que le RGPD ?</span></div><span class="sug-arr">→</span></button>
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Droits</span><span class="sug-txt">Droits des personnes concernées</span></div><span class="sug-arr">→</span></button>
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Obligations</span><span class="sug-txt">Obligations du responsable</span></div><span class="sug-arr">→</span></button>
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Incidents</span><span class="sug-txt">Violation de données personnelles</span></div><span class="sug-arr">→</span></button>
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">DPO</span><span class="sug-txt">Rôle et missions du DPO</span></div><span class="sug-arr">→</span></button>
+      <button class="sug" onclick="sug(this)"><div class="sug-left"><span class="sug-lbl">Sanctions</span><span class="sug-txt">Sanctions CNIL 2024</span></div><span class="sug-arr">→</span></button>
+    </div>`;
+  chat.appendChild(w);
+}
+
+function rmConv(id){delConv(id);if(convId===id)newConv();else renderHist();}
+
+function sug(btn){
+  const q=btn.querySelector('.sug-txt').textContent.trim();
+  document.getElementById('question').value=q;
+  autoResize(document.getElementById('question'));
+  send();
+}
+
+function rmWelcome(){
+  const w=document.getElementById('welcomeCard');if(!w)return;
+  w.style.transition='opacity .25s,transform .25s';
+  w.style.opacity='0';w.style.transform='translateY(-8px)';
+  setTimeout(()=>w.remove(),250);
+}
+
+function appendMsg(role,text,sources){
+  const chat=document.getElementById('chat');
+  const isU=role==='user';
+  const msg=document.createElement('div');msg.className=`msg ${role}`;
+  const av=document.createElement('div');av.className='av';av.textContent=isU?'VOUS':'LAW';
+  const body=document.createElement('div');body.className='msg-body';
+  const meta=document.createElement('div');meta.className='msg-meta';
+  meta.textContent=isU?'Vous':'LawBot · Expert RGPD';
+  const bbl=document.createElement('div');bbl.className='bbl';bbl.innerHTML=fmt(text);
+  body.appendChild(meta);body.appendChild(bbl);
+  if(sources&&sources.length){
+    const btn=document.createElement('button');btn.className='src-btn';
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      ${sources.length} source${sources.length>1?'s':''} consultée${sources.length>1?'s':''}
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
+    const panel=document.createElement('div');panel.className='src-panel';
+    sources.forEach((s,i)=>{
+      const row=document.createElement('div');row.className='src-row';
+      row.innerHTML=`<span class="src-n">${i+1}</span><span>${esc(s)}</span>`;
+      panel.appendChild(row);
+    });
+    btn.addEventListener('click',()=>{btn.classList.toggle('open');panel.classList.toggle('open')});
+    body.appendChild(btn);body.appendChild(panel);
+  }
+  msg.appendChild(av);msg.appendChild(body);
+  chat.appendChild(msg);scrollBot();
+}
+
+function showTyping(){
+  const chat=document.getElementById('chat');
+  const t=document.createElement('div');t.className='msg bot';t.id='typing';
+  t.innerHTML=`<div class="av">LAW</div><div class="msg-body"><div class="msg-meta">LawBot · Analyse…</div><div class="bbl"><div class="typing-wrap"><div class="d"></div><div class="d"></div><div class="d"></div></div></div></div>`;
+  chat.appendChild(t);scrollBot();
+}
+function hideTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+async function send(){
+  if(loading)return;
+  const inp=document.getElementById('question');
+  const q=inp.value.trim();if(!q)return;
+  rmWelcome();
+  if(!convId){
+    convId=uid();
+    const title=q.length>50?q.slice(0,50)+'…':q;
+    upsert({id:convId,title,ts:Date.now(),messages:[]});
+    document.getElementById('tbTitle').textContent=title;
+    renderHist();
+  }
+  inp.value='';inp.style.height='auto';updCount(inp);
+  appendMsg('user',q);
+  const c=getConv(convId);c.messages.push({role:'user',text:q});c.ts=Date.now();upsert(c);
+  loading=true;document.getElementById('sendBtn').disabled=true;showTyping();
+  try{
+    const res=await fetch(API_ASK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    hideTyping();appendMsg('bot',data.answer,data.sources);
+    const c2=getConv(convId);c2.messages.push({role:'bot',text:data.answer,sources:data.sources});c2.ts=Date.now();upsert(c2);renderHist();
+  }catch(err){
+    hideTyping();
+    const chat=document.getElementById('chat');
+    const e=document.createElement('div');e.className='msg bot';
+    e.innerHTML=`<div class="av">LAW</div><div class="msg-body"><div class="msg-meta">LawBot · Erreur</div><div class="err-msg">Impossible de joindre l'API. Vérifiez que FastAPI tourne.<br><code>${esc(err.message)}</code></div></div>`;
+    chat.appendChild(e);scrollBot();checkHealth();
+  }finally{
+    loading=false;document.getElementById('sendBtn').disabled=false;inp.focus();
+  }
+}
+
+function scrollBot(){const c=document.getElementById('chat');setTimeout(()=>c.scrollTo({top:c.scrollHeight,behavior:'smooth'}),50);}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,140)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function updCount(el){document.getElementById('izCount').textContent=`${el.value.length} / 500`;}
+
+window.addEventListener('load',()=>{
+  checkHealth();setInterval(checkHealth,30000);
+  renderHist();document.getElementById('question').focus();
+});
+</script>
+</body>
+</html>
