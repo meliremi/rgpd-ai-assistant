@@ -1,72 +1,107 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from transformers import pipeline
 from sentence_transformers import SentenceTransformer
+import numpy as np
 
 from rag.retriever import search, build_faiss_index
 from data_preparation.chunking import load_chunks
 
+app = FastAPI(title="RGPD RAG API", version="5.0")
+
 # =========================
-# FASTAPI
+# LLM
 # =========================
-app = FastAPI(
-    title="RGPD RAG API",
-    version="4.0"
+llm = pipeline(
+    "text-generation",
+    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    device_map="auto"
 )
 
 # =========================
-# EMBEDDING MODEL
+# EMBEDDINGS
 # =========================
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# =========================
-# REQUEST MODEL
-# =========================
 class QueryRequest(BaseModel):
     question: str
 
 # =========================
-# LOAD DATASET
+# DATA
 # =========================
 chunks = load_chunks()
-
-# suppression des doublons
-chunks = list(dict.fromkeys(chunks))
-
-# embeddings
-embeddings = embedder.encode(chunks)
-
-# FAISS
+embeddings = embedder.encode(chunks, normalize_embeddings=True)
 index = build_faiss_index(embeddings)
 
 # =========================
-# BUILD ANSWER
+# SCORE FILTER (IMPORTANT)
 # =========================
-def build_answer(question, retrieved_chunks):
+def is_relevant(question, retrieved_chunks):
+    q_emb = embedder.encode(question, normalize_embeddings=True)
 
-    if len(retrieved_chunks) == 0:
+    chunk_embs = embedder.encode(retrieved_chunks, normalize_embeddings=True)
+
+    scores = np.dot(chunk_embs, q_emb)
+
+    return float(max(scores)) > 0.35  # seuil IMPORTANT
+
+# =========================
+# PROMPT
+# =========================
+def build_prompt(question, context):
+    return f"""
+Tu es un assistant expert UNIQUEMENT en RGPD.
+
+Règles strictes :
+- utilise uniquement le contexte
+- si contexte insuffisant → répond "Information non disponible dans le contexte"
+- réponse courte (max 5 lignes)
+- ne jamais inventer
+
+CONTEXTE:
+{context}
+
+QUESTION:
+{question}
+
+REPONSE:
+"""
+
+# =========================
+# GENERATION SAFE
+# =========================
+def generate_answer(question, retrieved_chunks):
+
+    if not retrieved_chunks:
         return "Information non disponible dans le contexte."
 
-    # meilleur chunk
-    best_chunk = retrieved_chunks[0]
+    if not is_relevant(question, retrieved_chunks):
+        return "Information non disponible dans le contexte."
 
-    # nettoyage
-    best_chunk = best_chunk.replace("\n", " ").strip()
+    context = "\n".join(retrieved_chunks[:4])
 
-    # extraction après "?"
-    if "?" in best_chunk:
+    prompt = build_prompt(question, context)
 
-        parts = best_chunk.split("?")
+    output = llm(
+        prompt,
+        max_new_tokens=80,
+        do_sample=False,
+        temperature=0.0
+    )[0]["generated_text"]
 
-        if len(parts) > 1:
+    if "REPONSE:" in output:
+        answer = output.split("REPONSE:")[-1].strip()
+    else:
+        answer = output.strip()
 
-            answer = parts[1].strip()
+    # cleanup hardcore
+    answer = answer.split("QUESTION")[0].strip()
+    answer = answer.split("CONTEXTE")[0].strip()
 
-            # sécurité
-            if len(answer) > 3:
-                return answer
+    if len(answer) < 5:
+        return "Information non disponible dans le contexte."
 
-    # fallback
-    return best_chunk
+    return answer
 
 # =========================
 # ENDPOINT
@@ -74,17 +109,12 @@ def build_answer(question, retrieved_chunks):
 @app.post("/ask")
 def ask(req: QueryRequest):
 
-    # recherche FAISS
     results = search(req.question, index, chunks)
 
-    # suppression doublons
-    results = list(dict.fromkeys(results))
+    # anti duplication + top k
+    results = list(dict.fromkeys(results))[:5]
 
-    # top 5
-    results = results[:5]
-
-    # génération réponse
-    answer = build_answer(req.question, results)
+    answer = generate_answer(req.question, results)
 
     return {
         "question": req.question,
@@ -93,10 +123,8 @@ def ask(req: QueryRequest):
     }
 
 # =========================
-# HEALTHCHECK
+# HEALTH
 # =========================
 @app.get("/health")
 def health():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
