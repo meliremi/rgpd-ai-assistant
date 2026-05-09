@@ -1,18 +1,16 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 
 from rag.retriever import search, build_faiss_index
-
-app = FastAPI()
+from data_preparation.chunking import load_chunks
 
 # =========================
-# LLM
+# FASTAPI
 # =========================
-llm = pipeline(
-    "text-generation",
-    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+app = FastAPI(
+    title="RGPD RAG API",
+    version="4.0"
 )
 
 # =========================
@@ -26,49 +24,49 @@ embedder = SentenceTransformer("all-MiniLM-L6-v2")
 class QueryRequest(BaseModel):
     question: str
 
-
 # =========================
-# DATA
+# LOAD DATASET
 # =========================
-chunks = [
-    "Le RGPD protège les données personnelles des citoyens.",
-    "La CNIL est l'autorité française de protection des données.",
-    "Les entreprises doivent respecter la minimisation des données.",
-    "Le droit à l'oubli permet la suppression des données.",
-]
+chunks = load_chunks()
 
+# suppression des doublons
+chunks = list(dict.fromkeys(chunks))
+
+# embeddings
 embeddings = embedder.encode(chunks)
-index = build_faiss_index(embeddings)
 
+# FAISS
+index = build_faiss_index(embeddings)
 
 # =========================
 # BUILD ANSWER
 # =========================
 def build_answer(question, retrieved_chunks):
 
-    context = "\n".join(retrieved_chunks)
+    if len(retrieved_chunks) == 0:
+        return "Information non disponible dans le contexte."
 
-    prompt = f"""
-Contexte:
-{context}
+    # meilleur chunk
+    best_chunk = retrieved_chunks[0]
 
-Question:
-{question}
+    # nettoyage
+    best_chunk = best_chunk.replace("\n", " ").strip()
 
-Réponse:
-"""
+    # extraction après "?"
+    if "?" in best_chunk:
 
-    output = llm(
-        prompt,
-        max_new_tokens=50,
-        do_sample=False,
-        return_full_text=False
-    )[0]["generated_text"]
+        parts = best_chunk.split("?")
 
-    answer = output.strip().split("Question:")[0]
+        if len(parts) > 1:
 
-    return answer.strip()
+            answer = parts[1].strip()
 
+            # sécurité
+            if len(answer) > 3:
+                return answer
+
+    # fallback
+    return best_chunk
 
 # =========================
 # ENDPOINT
@@ -76,12 +74,29 @@ Réponse:
 @app.post("/ask")
 def ask(req: QueryRequest):
 
+    # recherche FAISS
     results = search(req.question, index, chunks)
 
+    # suppression doublons
+    results = list(dict.fromkeys(results))
+
+    # top 5
+    results = results[:5]
+
+    # génération réponse
     answer = build_answer(req.question, results)
 
     return {
         "question": req.question,
         "answer": answer,
         "sources": results
+    }
+
+# =========================
+# HEALTHCHECK
+# =========================
+@app.get("/health")
+def health():
+    return {
+        "status": "ok"
     }

@@ -1,39 +1,39 @@
-# =========================
-# RAG CHUNKING MODULE
-# =========================
+import json
 
+# =========================
+# LOAD DATASET (RAG BASE)
+# =========================
+def load_chunks(path="dataset_rgpd_50.json"):
+    with open(path, "r", encoding="utf-8") as f:
+        dataset = json.load(f)
+
+    # on transforme en chunks utilisables pour FAISS
+    chunks = [
+        f"{item['question']} {item['answer']}"
+        for item in dataset
+    ]
+
+    return chunks
+
+
+# =========================
+# OPTION PDF CHUNKING (INUTILE POUR L’INSTANT)
+# =========================
 def chunk_text(text, chunk_size=500, overlap=100):
-    """
-    Découpe un texte en chunks pour RAG.
-
-    Args:
-        text (str): texte complet
-        chunk_size (int): taille d’un chunk
-        overlap (int): chevauchement entre chunks
-
-    Returns:
-        list[str]: liste de chunks
-    """
     chunks = []
     start = 0
 
     while start < len(text):
-        chunk = text[start:start + chunk_size]
-        chunks.append(chunk)
+        chunks.append(text[start:start + chunk_size])
         start += chunk_size - overlap
 
     return chunks
 
 
 # =========================
-# TEST LOCAL (OPTIONNEL)
+# TEST
 # =========================
-
 if __name__ == "__main__":
-    sample_text = "RGPD est un règlement européen. " * 100
-
-    chunks = chunk_text(sample_text)
-
-    print("Nombre de chunks:", len(chunks))
-    print("\nExemple chunk:")
+    chunks = load_chunks()
+    print("Nb chunks:", len(chunks))
     print(chunks[0])
