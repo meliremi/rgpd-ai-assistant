@@ -4,7 +4,7 @@ Assistant intelligent basé sur le RAG (Retrieval Augmented Generation) pour ré
 
 
 ```text
-PROJET RGPD SELMA
+PROJET RGPD 
 └── 📁 rgpd-ai-assistant/
     ├── .venv/                  # Environnement virtuel
     ├── 📁 data_preparation/       # Scripts de traitement de données
