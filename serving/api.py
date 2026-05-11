@@ -131,6 +131,7 @@ RÈGLES STRICTES :
 - si info absente → "Information non disponible dans le contexte."
 - réponse courte (max 4 lignes)
 - ne jamais inventer
+-Réponds de manière complète et termine toujours les phrases.
 
 CONTEXTE:
 {context}
@@ -159,10 +160,11 @@ def generate_answer(question, retrieved_chunks):
 
     output = llm(
         prompt,
-        max_new_tokens=60,
+        max_new_tokens=250,
         do_sample=False,
-        temperature=0.0,
+        temperature=0.2,
         repetition_penalty=1.1
+    
     )[0]["generated_text"]
 
     # extraction réponse propre
