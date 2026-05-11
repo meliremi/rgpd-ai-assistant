@@ -1,11 +1,12 @@
 # RGPD AI Assistant 🛡️
 
-Assistant intelligent basé sur le RAG (Retrieval Augmented Generation) pour répondre aux questions sur le RGPD.
+Assistant intelligent basé sur une architecture RAG (Retrieval Augmented Generation) permettant de répondre à des questions sur le RGPD de manière contextualisée à partir de documents juridiques.
 
 
 ```text
 PROJET RGPD 
 └── 📁 rgpd-ai-assistant/
+    |--.zen/                     # Configuration ZenML
     ├── .venv/                  # Environnement virtuel
     ├── 📁 data_preparation/       # Scripts de traitement de données
     │   ├── 📄 alpaca_format.py
