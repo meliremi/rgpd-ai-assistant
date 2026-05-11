@@ -4,19 +4,37 @@ Assistant intelligent basé sur le RAG (Retrieval Augmented Generation) pour ré
 
 
 ```text
-rgpd-ai-assistant/
-├── 📁 .venv/                # Environnement virtuel (Masqué par défaut)
-├── 📁 data/                 #  Déposez vos PDF sources ici
-│   └── document_rgpd.pdf
-├── 📁 data_preparation/     #  Étape 1 : Scripts de traitement
-│   └── extract_text.py      # Extraction de texte (pdfplumber)
-├── 📁 rag/                  #  Étape 2 : Moteur d'intelligence
-│   ├── embeddings.py        # Vecteurs (Sentence-Transformers)
-│   └── retriever.py         # Recherche sémantique (FAISS)
-├── 📁 serving/              #  Étape 3 : Serveur API
-│   └── api.py               # FastAPI & TinyLlama
-├── 📄 requirements.txt      # Liste des bibliothèques
-└── 📄 README.md             # Guide d'utilisation 
+PROJET RGPD SELMA
+└── 📁 rgpd-ai-assistant/
+    ├── .venv/                  # Environnement virtuel
+    ├── 📁 data_preparation/       # Scripts de traitement de données
+    │   ├── 📄 alpaca_format.py
+    │   ├── 📄 chunking.py
+    │   ├── 📄 clean_filter.py
+    │   ├── 📄 dataset_train.json
+    │   ├── 📄 dataset_val.json
+    │   ├── 📄 extract_text.py
+    │   ├── 📄 generate_qa.py
+    │   ├── 📄 RGPD.pdf            # Source PDF originale
+    │   └── 📄 split_export.py
+    ├── 📁 evaluation/             # Tests de performance
+    │   └── 📄 ragas_eval.py
+    ├── 📁  frontend/               # Interface utilisateur
+    │   └── 📄 index.html
+    ├── 📁 pipeline/               # Orchestration du workflow
+    │   └── 📄 run_pipeline.py
+    ├── 📁 rag/                    # Logique du Retrieval Augmented Generation
+    │   ├── 📄 embeddings.py
+    │   ├── 📄 prompt_templates.py
+    │   └── 📄 retriever.py
+    ├──📁  serving/                # Déploiement et API
+    │   └── api.py
+    ├──📁  training/               # (Dossier d'entraînement, contenu non visible)
+    ├── .gitignore
+    ├── 📄dataset_rgpd_50.json    # Dataset final ou de test
+    ├── README.md               # Documentation du projet
+    ├── 📄 requirements.txt        # Dépendances Python
+    └── 📄rgpd_text.txt           # Extraction plein texte du RGPD
 ```
 ## 📋 Prérequis
 
