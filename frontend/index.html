@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -41,6 +41,45 @@
 
   --ease:cubic-bezier(.22,1,.36,1);
 }
+
+/* ═══ LIGHT MODE ═══ */
+html[data-theme="light"]{
+  --bg:#f4f3ff;
+  --s1:#ffffff;
+  --s2:#f0eeff;
+  --s3:#e8e1ff;
+  --s4:#ddd5ff;
+  --w:#1a1730;
+  --w2:#4a4568;
+  --muted:#8e8aaa;
+  --ghost:#d4cef5;
+  --line:rgba(0,0,0,.09);
+  --line2:rgba(0,0,0,.05);
+}
+html[data-theme="light"] body{background:var(--bg)}
+html[data-theme="light"] .iz{background:linear-gradient(to top,#f4f3ff 55%,transparent)}
+html[data-theme="light"] .topbar{background:rgba(244,243,255,.9)}
+html[data-theme="light"] .mb1{background:radial-gradient(ellipse,rgba(109,40,217,.07) 0%,transparent 65%)}
+html[data-theme="light"] .mb2{background:radial-gradient(ellipse,rgba(124,58,237,.05) 0%,transparent 60%)}
+html[data-theme="light"] .mb3{background:none}
+html[data-theme="light"] .w-h{background:linear-gradient(140deg,#1a1730 25%,var(--v) 65%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+html[data-theme="light"] .w-h strong{-webkit-text-fill-color:var(--w);color:var(--w)}
+html[data-theme="light"] #question{color:var(--w)}
+html[data-theme="light"] .conv:hover{background:rgba(0,0,0,.04)}
+
+/* ═══ THEME TOGGLE ═══ */
+.theme-toggle{
+  width:32px;height:32px;border-radius:var(--r3);
+  background:transparent;border:1px solid var(--line);
+  display:grid;place-items:center;cursor:pointer;
+  transition:all .2s;flex-shrink:0;color:var(--muted);
+}
+.theme-toggle:hover{background:var(--s3);color:var(--w)}
+.theme-toggle svg{width:15px;height:15px;fill:currentColor;transition:opacity .2s,transform .3s}
+.icon-moon{display:block}
+.icon-sun{display:none}
+html[data-theme="light"] .icon-moon{display:none}
+html[data-theme="light"] .icon-sun{display:block}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -246,8 +285,9 @@ body{background:var(--bg);color:var(--w);font-family:var(--ff);font-size:14px;li
 .msg.user .msg-meta{text-align:right}
 
 .bbl{padding:14px 20px;font-size:.875rem;line-height:1.85;word-break:break-word;border-radius:var(--r)}
+.bbl p{margin:0 0 10px}.bbl p:last-child{margin-bottom:0}
 .msg.user .bbl{background:var(--s3);border:1px solid var(--line);border-radius:var(--r) 3px var(--r) var(--r);color:var(--w)}
-.msg.bot  .bbl{background:var(--s2);border:1px solid var(--line);border-radius:3px var(--r) var(--r) var(--r);border-left:2px solid var(--v);color:var(--w)}
+.msg.bot  .bbl{background:var(--s2);border:1px solid var(--line);border-radius:3px var(--r) var(--r) var(--r);border-left:2px solid var(--v);color:var(--w);min-height:20px}
 
 .src-btn{
   margin-top:10px;display:inline-flex;align-items:center;gap:7px;
@@ -361,6 +401,11 @@ body{background:var(--bg);color:var(--w);font-family:var(--ff);font-size:14px;li
 
     <div class="tb-title" id="tbTitle">Bienvenue — <em>posez votre question</em></div>
 
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Thème clair / sombre">
+      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zM2 13h2a1 1 0 0 0 0-2H2a1 1 0 0 0 0 2zm18 0h2a1 1 0 0 0 0-2h-2a1 1 0 0 0 0 2zM11 2v2a1 1 0 0 0 2 0V2a1 1 0 0 0-2 0zm0 18v2a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0zM5.64 6.35l-1.42-1.42a1 1 0 0 0-1.41 1.41l1.42 1.42a1 1 0 0 0 1.41-1.41zm12.73 12.73-1.42-1.42a1 1 0 0 0-1.41 1.41l1.42 1.42a1 1 0 0 0 1.41-1.41zm-12.73 0a1 1 0 0 0 1.41-1.41L5.64 16.25a1 1 0 0 0-1.41 1.41zm12.73-12.73a1 1 0 0 0-1.41 1.41l1.42 1.42a1 1 0 0 0 1.41-1.41z"/></svg>
+    </button>
+
     <div class="tb-pills">
       <div class="pill pill-model">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
@@ -429,7 +474,7 @@ body{background:var(--bg);color:var(--w);font-family:var(--ff);font-size:14px;li
 </div>
 
 <script>
-const API_ASK='/ask',API_HEALTH='/health',SKEY='lawbot_2026';
+const API_ASK='http://localhost:8000/ask',API_HEALTH='http://localhost:8000/health',SKEY='lawbot_2026';
 let loading=false,convId=null,sbOpen=true;
 
 const getAll=()=>{try{return JSON.parse(localStorage.getItem(SKEY))||[]}catch{return[]}};
@@ -439,7 +484,8 @@ const upsert=c=>{const h=getAll();const i=h.findIndex(x=>x.id===c.id);i>=0?h[i]=
 const delConv=id=>setAll(getAll().filter(c=>c.id!==id));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const fmt=t=>esc(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
+const fmt=t=>esc(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+const fmtWrap=t=>`<p>${fmt(t)}</p>`;
 
 function ago(ts){
   const d=Date.now()-ts;
@@ -545,7 +591,8 @@ function appendMsg(role,text,sources){
   const body=document.createElement('div');body.className='msg-body';
   const meta=document.createElement('div');meta.className='msg-meta';
   meta.textContent=isU?'Vous':'LawBot · Expert RGPD';
-  const bbl=document.createElement('div');bbl.className='bbl';bbl.innerHTML=fmt(text);
+  const safeText=(text&&text.trim().length>=3)?text:(isU?text:'Je n\'ai pas trouvé de réponse précise dans les documents RGPD. Essayez de reformuler votre question.');
+  const bbl=document.createElement('div');bbl.className='bbl';bbl.innerHTML=fmtWrap(safeText);
   body.appendChild(meta);body.appendChild(bbl);
   if(sources&&sources.length){
     const btn=document.createElement('button');btn.className='src-btn';
@@ -606,12 +653,21 @@ async function send(){
   }
 }
 
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  localStorage.setItem('lawbot_theme',isDark?'light':'dark');
+}
+
 function scrollBot(){const c=document.getElementById('chat');setTimeout(()=>c.scrollTo({top:c.scrollHeight,behavior:'smooth'}),50);}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,140)+'px';}
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function updCount(el){document.getElementById('izCount').textContent=`${el.value.length} / 500`;}
 
 window.addEventListener('load',()=>{
+  const savedTheme=localStorage.getItem('lawbot_theme');
+  if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
   checkHealth();setInterval(checkHealth,30000);
   renderHist();document.getElementById('question').focus();
 });
